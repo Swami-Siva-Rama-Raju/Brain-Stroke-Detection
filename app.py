@@ -1,8 +1,10 @@
 from flask import Flask, render_template, request, jsonify
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import tensorflow as tf
 import numpy as np
 import cv2
-import os
 from dotenv import load_dotenv
 import requests
 import json
@@ -21,7 +23,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(BASE_DIR, "model", "phase2_kesava.h5")
 
 model = tf.keras.models.load_model(MODEL_PATH)
-
+model.make_predict_function()
 # Get Groq API key
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
@@ -79,7 +81,8 @@ def generate_gradcam(img_path, model):
         original_img = cv2.cvtColor(original_img, cv2.COLOR_BGR2RGB)
         
         # Resize heatmap to match original image
-        heatmap_resized = cv2.resize(heatmap, (original_img.shape[1], original_img.shape[0]))
+        heatmap_resized = cv2.resize(heatmap, (224, 224))
+        original_img = cv2.resize(original_img, (224, 224))
         heatmap_resized = np.uint8(255 * heatmap_resized)
         
         # Apply colormap
@@ -204,4 +207,5 @@ Always include a disclaimer that this is for educational purposes only."""
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
+
     app.run(host="0.0.0.0", port=5000)
